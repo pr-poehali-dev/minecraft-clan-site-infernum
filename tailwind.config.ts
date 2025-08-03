@@ -61,6 +61,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				steampunk: {
+					bronze: '#8B4513',
+					gold: '#FFD700',
+					rust: '#FF6B35',
+					copper: '#B87333',
+					iron: '#4A4A4A',
+					brass: '#B5A642'
 				}
 			},
 			borderRadius: {
