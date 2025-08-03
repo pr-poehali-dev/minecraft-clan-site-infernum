@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
@@ -25,19 +26,105 @@ const Index = () => {
     hasAdminRights: true
   });
 
+  const [editMode, setEditMode] = useState({
+    news: false,
+    gallery: false,
+    rules: false,
+    members: false
+  });
+
   const [roles, setRoles] = useState([
-    { id: '1', name: 'Конфуций', color: '#dc2626', description: 'Верховный мудрец клана' },
-    { id: '2', name: 'Главный Инженер', color: '#FFD700', description: 'Лидер клана' },
-    { id: '3', name: 'Мастер Кузнец', color: '#FF6B35', description: 'Заместитель лидера' },
-    { id: '4', name: 'Механик', color: '#8B4513', description: 'Офицер клана' },
-    { id: '5', name: 'Изобретатель', color: '#B87333', description: 'Активный участник' },
-    { id: '6', name: 'Инженер', color: '#4A4A4A', description: 'Участник клана' }
+    { 
+      id: '1', 
+      name: 'Конфуций', 
+      color: '#dc2626', 
+      description: 'Верховный мудрец клана',
+      permissions: {
+        manageRoles: true,
+        editContent: true,
+        manageMembers: true,
+        deleteContent: true,
+        viewReports: true
+      }
+    },
+    { 
+      id: '2', 
+      name: 'Главный Инженер', 
+      color: '#FFD700', 
+      description: 'Лидер клана',
+      permissions: {
+        manageRoles: false,
+        editContent: true,
+        manageMembers: true,
+        deleteContent: false,
+        viewReports: true
+      }
+    },
+    { 
+      id: '3', 
+      name: 'Мастер Кузнец', 
+      color: '#FF6B35', 
+      description: 'Заместитель лидера',
+      permissions: {
+        manageRoles: false,
+        editContent: true,
+        manageMembers: false,
+        deleteContent: false,
+        viewReports: false
+      }
+    },
+    { 
+      id: '4', 
+      name: 'Механик', 
+      color: '#8B4513', 
+      description: 'Офицер клана',
+      permissions: {
+        manageRoles: false,
+        editContent: false,
+        manageMembers: false,
+        deleteContent: false,
+        viewReports: false
+      }
+    },
+    { 
+      id: '5', 
+      name: 'Изобретатель', 
+      color: '#B87333', 
+      description: 'Активный участник',
+      permissions: {
+        manageRoles: false,
+        editContent: false,
+        manageMembers: false,
+        deleteContent: false,
+        viewReports: false
+      }
+    },
+    { 
+      id: '6', 
+      name: 'Инженер', 
+      color: '#4A4A4A', 
+      description: 'Участник клана',
+      permissions: {
+        manageRoles: false,
+        editContent: false,
+        manageMembers: false,
+        deleteContent: false,
+        viewReports: false
+      }
+    }
   ]);
 
   const [newRole, setNewRole] = useState({
     name: '',
     color: '#FFD700',
-    description: ''
+    description: '',
+    permissions: {
+      manageRoles: false,
+      editContent: false,
+      manageMembers: false,
+      deleteContent: false,
+      viewReports: false
+    }
   });
 
   const [members, setMembers] = useState([
@@ -49,45 +136,72 @@ const Index = () => {
     { id: '6', name: 'Конфуций', rank: 'Конфуций', role: 'Верховный мудрец', status: 'online', roleColor: '#dc2626' }
   ]);
 
-  const news = [
+  const [news, setNews] = useState([
     {
+      id: '1',
       title: '🏮 Фестиваль красных фонарей',
       date: '1 августа 2025',
       content: 'Начинается традиционный японский фестиваль! Украшаем базу красными фонариками и строим святилища.'
     },
     {
+      id: '2',
       title: 'Обновление клановой базы',
       date: '28 июля 2025',
       content: 'Завершено строительство новой стимпанк мастерской с автоматическими системами крафта.'
     },
     {
+      id: '3',
       title: 'Набор в клан открыт!',
       date: '25 июля 2025', 
       content: 'Приглашаем новых участников присоединиться к клану Infernum. Требования: опыт игры от 100 часов.'
     },
     {
+      id: '4',
       title: 'Турнир между кланами',
       date: '20 июля 2025',
       content: 'Победа в межклановом турнире! Infernum занял 1 место в категории "Лучшие постройки".'
     }
-  ];
+  ]);
 
-  const gallery = [
-    { title: 'Клановая база', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' },
-    { title: 'Японские фонарики', image: '/img/69d0941d-94f1-4667-aea7-2a84f6074202.jpg' },
-    { title: 'Святилище Тории', image: '/img/51c0d897-82e2-4d99-b8eb-1ad1f55a57aa.jpg' },
-    { title: 'Стимпанк мастерская', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' },
-    { title: 'Механические конструкции', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' }
-  ];
+  const [newNewsItem, setNewNewsItem] = useState({
+    title: '',
+    content: ''
+  });
 
-  const rules = [
-    { title: 'Уважение к участникам', desc: 'Соблюдайте взаимное уважение и поддерживайте дружескую атмосферу' },
-    { title: 'Активность', desc: 'Минимальная активность - 2 раза в неделю' },
-    { title: 'Стиль построек', desc: 'Все постройки должны соответствовать стимпанк тематике клана' },
-    { title: 'Discord обязателен', desc: 'Наличие Discord для координации и общения' },
-    { title: 'Помощь новичкам', desc: 'Опытные игроки помогают новым участникам освоиться' },
-    { title: 'Японские традиции', desc: 'Уважайте японские элементы в дизайне базы и построек' }
-  ];
+  const [gallery, setGallery] = useState([
+    { id: '1', title: 'Клановая база', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' },
+    { id: '2', title: 'Японские фонарики', image: '/img/69d0941d-94f1-4667-aea7-2a84f6074202.jpg' },
+    { id: '3', title: 'Святилище Тории', image: '/img/51c0d897-82e2-4d99-b8eb-1ad1f55a57aa.jpg' },
+    { id: '4', title: 'Стимпанк мастерская', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' },
+    { id: '5', title: 'Механические конструкции', image: '/img/898a4a62-680e-4954-8324-57f0b6423198.jpg' }
+  ]);
+
+  const [newGalleryItem, setNewGalleryItem] = useState({
+    title: '',
+    image: ''
+  });
+
+  const [rules, setRules] = useState([
+    { id: '1', title: 'Уважение к участникам', desc: 'Соблюдайте взаимное уважение и поддерживайте дружескую атмосферу' },
+    { id: '2', title: 'Активность', desc: 'Минимальная активность - 2 раза в неделю' },
+    { id: '3', title: 'Стиль построек', desc: 'Все постройки должны соответствовать стимпанк тематике клана' },
+    { id: '4', title: 'Discord обязателен', desc: 'Наличие Discord для координации и общения' },
+    { id: '5', title: 'Помощь новичкам', desc: 'Опытные игроки помогают новым участникам освоиться' },
+    { id: '6', title: 'Японские традиции', desc: 'Уважайте японские элементы в дизайне базы и построек' }
+  ]);
+
+  const [newRule, setNewRule] = useState({
+    title: '',
+    desc: ''
+  });
+
+  const permissionLabels = {
+    manageRoles: 'Управление ролями',
+    editContent: 'Редактирование контента',
+    manageMembers: 'Управление участниками',
+    deleteContent: 'Удаление контента',
+    viewReports: 'Просмотр отчетов'
+  };
 
   const handleApplicationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +215,18 @@ const Index = () => {
       ...newRole
     };
     setRoles([...roles, role]);
-    setNewRole({ name: '', color: '#FFD700', description: '' });
+    setNewRole({ 
+      name: '', 
+      color: '#FFD700', 
+      description: '',
+      permissions: {
+        manageRoles: false,
+        editContent: false,
+        manageMembers: false,
+        deleteContent: false,
+        viewReports: false
+      }
+    });
     alert('Роль создана успешно!');
   };
 
@@ -115,6 +240,43 @@ const Index = () => {
         : member
     ));
   };
+
+  const handleAddNews = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newsItem = {
+      id: Date.now().toString(),
+      title: newNewsItem.title,
+      date: new Date().toLocaleDateString('ru-RU'),
+      content: newNewsItem.content
+    };
+    setNews([newsItem, ...news]);
+    setNewNewsItem({ title: '', content: '' });
+    alert('Новость добавлена!');
+  };
+
+  const handleAddGalleryItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    const galleryItem = {
+      id: Date.now().toString(),
+      ...newGalleryItem
+    };
+    setGallery([...gallery, galleryItem]);
+    setNewGalleryItem({ title: '', image: '' });
+    alert('Элемент добавлен в галерею!');
+  };
+
+  const handleAddRule = (e: React.FormEvent) => {
+    e.preventDefault();
+    const rule = {
+      id: Date.now().toString(),
+      ...newRule
+    };
+    setRules([...rules, rule]);
+    setNewRule({ title: '', desc: '' });
+    alert('Правило добавлено!');
+  };
+
+  const canEdit = currentUser.hasAdminRights;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -322,7 +484,19 @@ const Index = () => {
           <TabsContent value="members" id="members">
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold mb-2">Участники клана</h3>
+                <div className="flex items-center justify-center space-x-4">
+                  <h3 className="text-3xl font-bold mb-2">Участники клана</h3>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditMode({...editMode, members: !editMode.members})}
+                    >
+                      <Icon name="Edit" className="w-4 h-4 mr-2" />
+                      {editMode.members ? 'Готово' : 'Редактировать'}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-muted-foreground">Познакомьтесь с нашими талантливыми инженерами 🏮</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -350,22 +524,34 @@ const Index = () => {
                         <Badge style={{ backgroundColor: member.roleColor }} className="text-white">
                           {member.rank}
                         </Badge>
-                        {currentUser.hasAdminRights && (
-                          <Select value={member.rank} onValueChange={(value) => {
-                            const roleId = roles.find(r => r.name === value)?.id;
-                            if (roleId) handleMemberRoleChange(member.id, roleId);
-                          }}>
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roles.map((role) => (
-                                <SelectItem key={role.id} value={role.name}>
-                                  <span style={{ color: role.color }}>{role.name}</span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        {editMode.members && currentUser.hasAdminRights && (
+                          <div className="flex space-x-2">
+                            <Select value={member.rank} onValueChange={(value) => {
+                              const roleId = roles.find(r => r.name === value)?.id;
+                              if (roleId) handleMemberRoleChange(member.id, roleId);
+                            }}>
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roles.map((role) => (
+                                  <SelectItem key={role.id} value={role.name}>
+                                    <span style={{ color: role.color }}>{role.name}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setMembers(members.filter(m => m.id !== member.id));
+                                alert('Участник удален');
+                              }}
+                            >
+                              <Icon name="Trash2" className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>
@@ -378,16 +564,77 @@ const Index = () => {
           <TabsContent value="news" id="news">
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold mb-2">Новости клана</h3>
+                <div className="flex items-center justify-center space-x-4">
+                  <h3 className="text-3xl font-bold mb-2">Новости клана</h3>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditMode({...editMode, news: !editMode.news})}
+                    >
+                      <Icon name="Edit" className="w-4 h-4 mr-2" />
+                      {editMode.news ? 'Готово' : 'Редактировать'}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-muted-foreground">Последние события и обновления 🏮</p>
               </div>
+
+              {editMode.news && canEdit && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Добавить новость</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleAddNews} className="space-y-4">
+                      <div>
+                        <Label htmlFor="newsTitle">Заголовок</Label>
+                        <Input
+                          id="newsTitle"
+                          value={newNewsItem.title}
+                          onChange={(e) => setNewNewsItem({...newNewsItem, title: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="newsContent">Содержание</Label>
+                        <Textarea
+                          id="newsContent"
+                          value={newNewsItem.content}
+                          onChange={(e) => setNewNewsItem({...newNewsItem, content: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <Button type="submit">
+                        <Icon name="Plus" className="w-4 h-4 mr-2" />
+                        Добавить новость
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="space-y-6">
                 {news.map((item, index) => (
                   <Card key={index} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xl">{item.title}</CardTitle>
-                        <Badge variant="outline">{item.date}</Badge>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{item.date}</Badge>
+                          {editMode.news && canEdit && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setNews(news.filter(n => n.id !== item.id));
+                                alert('Новость удалена');
+                              }}
+                            >
+                              <Icon name="Trash2" className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -402,18 +649,79 @@ const Index = () => {
           <TabsContent value="gallery" id="gallery">
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold mb-2">Галерея</h3>
+                <div className="flex items-center justify-center space-x-4">
+                  <h3 className="text-3xl font-bold mb-2">Галерея</h3>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditMode({...editMode, gallery: !editMode.gallery})}
+                    >
+                      <Icon name="Edit" className="w-4 h-4 mr-2" />
+                      {editMode.gallery ? 'Готово' : 'Редактировать'}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-muted-foreground">Наши лучшие творения и достижения 🏮</p>
               </div>
+
+              {editMode.gallery && canEdit && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Добавить в галерею</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleAddGalleryItem} className="space-y-4">
+                      <div>
+                        <Label htmlFor="galleryTitle">Название</Label>
+                        <Input
+                          id="galleryTitle"
+                          value={newGalleryItem.title}
+                          onChange={(e) => setNewGalleryItem({...newGalleryItem, title: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="galleryImage">URL изображения</Label>
+                        <Input
+                          id="galleryImage"
+                          value={newGalleryItem.image}
+                          onChange={(e) => setNewGalleryItem({...newGalleryItem, image: e.target.value})}
+                          placeholder="/img/example.jpg"
+                          required
+                        />
+                      </div>
+                      <Button type="submit">
+                        <Icon name="Plus" className="w-4 h-4 mr-2" />
+                        Добавить в галерею
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {gallery.map((item, index) => (
                   <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-video overflow-hidden">
+                    <div className="aspect-video overflow-hidden relative">
                       <img 
                         src={item.image} 
                         alt={item.title}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
+                      {editMode.gallery && canEdit && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => {
+                            setGallery(gallery.filter(g => g.id !== item.id));
+                            alert('Элемент удален из галереи');
+                          }}
+                        >
+                          <Icon name="Trash2" className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                     <CardContent className="p-4">
                       <h4 className="font-semibold text-lg">{item.title}</h4>
@@ -427,18 +735,79 @@ const Index = () => {
           <TabsContent value="rules" id="rules">
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold mb-2">Правила клана</h3>
+                <div className="flex items-center justify-center space-x-4">
+                  <h3 className="text-3xl font-bold mb-2">Правила клана</h3>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditMode({...editMode, rules: !editMode.rules})}
+                    >
+                      <Icon name="Edit" className="w-4 h-4 mr-2" />
+                      {editMode.rules ? 'Готово' : 'Редактировать'}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-muted-foreground">Основные принципы нашего сообщества 🏮</p>
               </div>
+
+              {editMode.rules && canEdit && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Добавить правило</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleAddRule} className="space-y-4">
+                      <div>
+                        <Label htmlFor="ruleTitle">Заголовок</Label>
+                        <Input
+                          id="ruleTitle"
+                          value={newRule.title}
+                          onChange={(e) => setNewRule({...newRule, title: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="ruleDesc">Описание</Label>
+                        <Textarea
+                          id="ruleDesc"
+                          value={newRule.desc}
+                          onChange={(e) => setNewRule({...newRule, desc: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <Button type="submit">
+                        <Icon name="Plus" className="w-4 h-4 mr-2" />
+                        Добавить правило
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="space-y-4">
                 {rules.map((rule, index) => (
                   <Card key={index} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center space-x-3">
-                        <span className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
-                          {index + 1}
-                        </span>
-                        <span>{rule.title}</span>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+                            {index + 1}
+                          </span>
+                          <span>{rule.title}</span>
+                        </div>
+                        {editMode.rules && canEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setRules(rules.filter(r => r.id !== rule.id));
+                              alert('Правило удалено');
+                            }}
+                          >
+                            <Icon name="Trash2" className="w-4 h-4" />
+                          </Button>
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -461,7 +830,7 @@ const Index = () => {
                 <Card className="mb-6">
                   <CardHeader>
                     <CardTitle>Создать новую роль</CardTitle>
-                    <CardDescription>Добавьте новую роль с уникальным цветом</CardDescription>
+                    <CardDescription>Добавьте новую роль с уникальным цветом и разрешениями</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleCreateRole} className="space-y-4">
@@ -497,6 +866,31 @@ const Index = () => {
                           required
                         />
                       </div>
+                      <div>
+                        <Label>Разрешения</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                          {Object.entries(permissionLabels).map(([key, label]) => (
+                            <div key={key} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={key}
+                                checked={newRole.permissions[key as keyof typeof newRole.permissions]}
+                                onCheckedChange={(checked) =>
+                                  setNewRole({
+                                    ...newRole,
+                                    permissions: {
+                                      ...newRole.permissions,
+                                      [key]: !!checked
+                                    }
+                                  })
+                                }
+                              />
+                              <Label htmlFor={key} className="text-sm">
+                                {label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                       <Button type="submit">
                         <Icon name="Plus" className="w-4 h-4 mr-2" />
                         Создать роль
@@ -509,20 +903,14 @@ const Index = () => {
                   {roles.map((role) => (
                     <Card key={role.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
-                        <CardTitle className="flex items-center space-x-3">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: role.color }}
-                          />
-                          <span style={{ color: role.color }}>{role.name}</span>
-                        </CardTitle>
-                        <CardDescription>{role.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <Badge style={{ backgroundColor: role.color }} className="text-white">
-                            {role.color}
-                          </Badge>
+                        <CardTitle className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div 
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: role.color }}
+                            />
+                            <span style={{ color: role.color }}>{role.name}</span>
+                          </div>
                           {role.name !== 'Конфуций' && (
                             <Button
                               variant="outline"
@@ -535,6 +923,29 @@ const Index = () => {
                               <Icon name="Trash2" className="w-4 h-4" />
                             </Button>
                           )}
+                        </CardTitle>
+                        <CardDescription>{role.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge style={{ backgroundColor: role.color }} className="text-white">
+                              {role.color}
+                            </Badge>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-medium mb-2">Разрешения:</p>
+                            <div className="space-y-1">
+                              {Object.entries(role.permissions).map(([key, value]) => (
+                                <div key={key} className="flex items-center space-x-2">
+                                  <div className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                  <span className={`text-xs ${value ? 'text-green-600' : 'text-gray-500'}`}>
+                                    {permissionLabels[key as keyof typeof permissionLabels]}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
