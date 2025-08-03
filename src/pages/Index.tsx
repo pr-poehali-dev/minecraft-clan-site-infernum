@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
@@ -32,6 +33,40 @@ const Index = () => {
     rules: false,
     members: false
   });
+
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    message: string;
+    type: 'success' | 'warning' | 'info';
+    timestamp: Date;
+  }>>([]);
+
+  const [activityLogs, setActivityLogs] = useState<Array<{
+    id: string;
+    user: string;
+    action: string;
+    target: string;
+    timestamp: Date;
+  }>>([
+    {
+      id: '1',
+      user: 'Конфуций',
+      action: 'Создал роль',
+      target: 'Мастер Кузнец',
+      timestamp: new Date('2025-08-01T10:30:00')
+    },
+    {
+      id: '2',
+      user: 'Конфуций',
+      action: 'Добавил новость',
+      target: 'Фестиваль красных фонарей',
+      timestamp: new Date('2025-08-01T09:15:00')
+    }
+  ]);
+
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editType, setEditType] = useState<'news' | 'gallery' | 'rules' | 'role' | null>(null);
 
   const [roles, setRoles] = useState([
     { 
@@ -203,9 +238,79 @@ const Index = () => {
     viewReports: 'Просмотр отчетов'
   };
 
+  const addNotification = (message: string, type: 'success' | 'warning' | 'info' = 'success') => {
+    const notification = {
+      id: Date.now().toString(),
+      message,
+      type,
+      timestamp: new Date()
+    };
+    setNotifications(prev => [notification, ...prev.slice(0, 4)]);
+    
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 5000);
+  };
+
+  const addLog = (action: string, target: string) => {
+    const log = {
+      id: Date.now().toString(),
+      user: currentUser.name,
+      action,
+      target,
+      timestamp: new Date()
+    };
+    setActivityLogs(prev => [log, ...prev.slice(0, 49)]);
+  };
+
+  const openEditDialog = (item: any, type: 'news' | 'gallery' | 'rules' | 'role') => {
+    setEditingItem({ ...item });
+    setEditType(type);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!editingItem || !editType) return;
+
+    switch (editType) {
+      case 'news':
+        setNews(news.map(item => 
+          item.id === editingItem.id ? editingItem : item
+        ));
+        addLog('Отредактировал новость', editingItem.title);
+        addNotification('Новость успешно обновлена');
+        break;
+      case 'gallery':
+        setGallery(gallery.map(item => 
+          item.id === editingItem.id ? editingItem : item
+        ));
+        addLog('Отредактировал элемент галереи', editingItem.title);
+        addNotification('Элемент галереи обновлен');
+        break;
+      case 'rules':
+        setRules(rules.map(item => 
+          item.id === editingItem.id ? editingItem : item
+        ));
+        addLog('Отредактировал правило', editingItem.title);
+        addNotification('Правило успешно обновлено');
+        break;
+      case 'role':
+        setRoles(roles.map(item => 
+          item.id === editingItem.id ? editingItem : item
+        ));
+        addLog('Отредактировал роль', editingItem.name);
+        addNotification('Роль успешно обновлена');
+        break;
+    }
+
+    setEditDialogOpen(false);
+    setEditingItem(null);
+    setEditType(null);
+  };
+
   const handleApplicationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Заявка отправлена! Мы свяжемся с вами в Discord в течение 24 часов.');
+    addNotification('Заявка отправлена! Мы свяжемся с вами в Discord в течение 24 часов.', 'info');
   };
 
   const handleCreateRole = (e: React.FormEvent) => {
@@ -227,18 +332,24 @@ const Index = () => {
         viewReports: false
       }
     });
-    alert('Роль создана успешно!');
+    addLog('Создал роль', role.name);
+    addNotification('Роль создана успешно!');
   };
 
   const handleMemberRoleChange = (memberId: string, newRankId: string) => {
     const selectedRole = roles.find(role => role.id === newRankId);
     if (!selectedRole) return;
 
-    setMembers(members.map(member => 
-      member.id === memberId 
-        ? { ...member, rank: selectedRole.name, roleColor: selectedRole.color }
-        : member
-    ));
+    const member = members.find(m => m.id === memberId);
+    if (member) {
+      setMembers(members.map(m => 
+        m.id === memberId 
+          ? { ...m, rank: selectedRole.name, roleColor: selectedRole.color }
+          : m
+      ));
+      addLog('Изменил роль участника', `${member.name} → ${selectedRole.name}`);
+      addNotification(`Роль участника ${member.name} изменена на ${selectedRole.name}`);
+    }
   };
 
   const handleAddNews = (e: React.FormEvent) => {
@@ -251,7 +362,8 @@ const Index = () => {
     };
     setNews([newsItem, ...news]);
     setNewNewsItem({ title: '', content: '' });
-    alert('Новость добавлена!');
+    addLog('Добавил новость', newsItem.title);
+    addNotification('Новость добавлена!');
   };
 
   const handleAddGalleryItem = (e: React.FormEvent) => {
@@ -262,7 +374,8 @@ const Index = () => {
     };
     setGallery([...gallery, galleryItem]);
     setNewGalleryItem({ title: '', image: '' });
-    alert('Элемент добавлен в галерею!');
+    addLog('Добавил элемент в галерею', galleryItem.title);
+    addNotification('Элемент добавлен в галерею!');
   };
 
   const handleAddRule = (e: React.FormEvent) => {
@@ -273,13 +386,185 @@ const Index = () => {
     };
     setRules([...rules, rule]);
     setNewRule({ title: '', desc: '' });
-    alert('Правило добавлено!');
+    addLog('Добавил правило', rule.title);
+    addNotification('Правило добавлено!');
+  };
+
+  const handleDelete = (id: string, type: 'news' | 'gallery' | 'rules' | 'role' | 'member', name: string) => {
+    switch (type) {
+      case 'news':
+        setNews(news.filter(n => n.id !== id));
+        addLog('Удалил новость', name);
+        addNotification('Новость удалена', 'warning');
+        break;
+      case 'gallery':
+        setGallery(gallery.filter(g => g.id !== id));
+        addLog('Удалил элемент галереи', name);
+        addNotification('Элемент удален из галереи', 'warning');
+        break;
+      case 'rules':
+        setRules(rules.filter(r => r.id !== id));
+        addLog('Удалил правило', name);
+        addNotification('Правило удалено', 'warning');
+        break;
+      case 'role':
+        setRoles(roles.filter(r => r.id !== id));
+        addLog('Удалил роль', name);
+        addNotification('Роль удалена', 'warning');
+        break;
+      case 'member':
+        setMembers(members.filter(m => m.id !== id));
+        addLog('Удалил участника', name);
+        addNotification('Участник удален', 'warning');
+        break;
+    }
   };
 
   const canEdit = currentUser.hasAdminRights;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {notifications.map((notification) => (
+          <Alert key={notification.id} className={`w-80 ${
+            notification.type === 'success' ? 'border-green-500 bg-green-50' :
+            notification.type === 'warning' ? 'border-yellow-500 bg-yellow-50' :
+            'border-blue-500 bg-blue-50'
+          }`}>
+            <Icon name={
+              notification.type === 'success' ? 'CheckCircle' :
+              notification.type === 'warning' ? 'AlertTriangle' : 'Info'
+            } className="h-4 w-4" />
+            <AlertDescription>{notification.message}</AlertDescription>
+          </Alert>
+        ))}
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Редактировать {editType === 'news' ? 'новость' : editType === 'gallery' ? 'элемент галереи' : editType === 'rules' ? 'правило' : 'роль'}</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="space-y-4">
+              {editType === 'news' && (
+                <>
+                  <div>
+                    <Label>Заголовок</Label>
+                    <Input
+                      value={editingItem.title}
+                      onChange={(e) => setEditingItem({...editingItem, title: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Содержание</Label>
+                    <Textarea
+                      value={editingItem.content}
+                      onChange={(e) => setEditingItem({...editingItem, content: e.target.value})}
+                    />
+                  </div>
+                </>
+              )}
+              {editType === 'gallery' && (
+                <>
+                  <div>
+                    <Label>Название</Label>
+                    <Input
+                      value={editingItem.title}
+                      onChange={(e) => setEditingItem({...editingItem, title: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>URL изображения</Label>
+                    <Input
+                      value={editingItem.image}
+                      onChange={(e) => setEditingItem({...editingItem, image: e.target.value})}
+                    />
+                  </div>
+                </>
+              )}
+              {editType === 'rules' && (
+                <>
+                  <div>
+                    <Label>Заголовок</Label>
+                    <Input
+                      value={editingItem.title}
+                      onChange={(e) => setEditingItem({...editingItem, title: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Описание</Label>
+                    <Textarea
+                      value={editingItem.desc}
+                      onChange={(e) => setEditingItem({...editingItem, desc: e.target.value})}
+                    />
+                  </div>
+                </>
+              )}
+              {editType === 'role' && (
+                <>
+                  <div>
+                    <Label>Название роли</Label>
+                    <Input
+                      value={editingItem.name}
+                      onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Цвет роли</Label>
+                    <Input
+                      type="color"
+                      value={editingItem.color}
+                      onChange={(e) => setEditingItem({...editingItem, color: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Описание</Label>
+                    <Textarea
+                      value={editingItem.description}
+                      onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Разрешения</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      {Object.entries(permissionLabels).map(([key, label]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={editingItem.permissions?.[key] || false}
+                            onCheckedChange={(checked) =>
+                              setEditingItem({
+                                ...editingItem,
+                                permissions: {
+                                  ...editingItem.permissions,
+                                  [key]: !!checked
+                                }
+                              })
+                            }
+                          />
+                          <Label className="text-sm">{label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="flex space-x-2">
+                <Button onClick={handleEditSave}>
+                  <Icon name="Save" className="w-4 h-4 mr-2" />
+                  Сохранить
+                </Button>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Japanese Lanterns Background */}
       <div className="fixed inset-0 pointer-events-none opacity-10">
         <div className="absolute top-10 left-10 text-6xl animate-pulse">🏮</div>
@@ -309,7 +594,10 @@ const Index = () => {
                 <a href="#gallery" className="text-foreground hover:text-primary transition-colors">Галерея</a>
                 <a href="#rules" className="text-foreground hover:text-primary transition-colors">Правила</a>
                 {currentUser.hasAdminRights && (
-                  <a href="#roles" className="text-foreground hover:text-primary transition-colors">Роли</a>
+                  <>
+                    <a href="#roles" className="text-foreground hover:text-primary transition-colors">Роли</a>
+                    <a href="#logs" className="text-foreground hover:text-primary transition-colors">Логи</a>
+                  </>
                 )}
               </nav>
               <div className="flex items-center space-x-2">
@@ -470,14 +758,17 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12 relative z-10">
-        <Tabs defaultValue="members" className="w-full">
-          <TabsList className={`grid w-full ${currentUser.hasAdminRights ? 'grid-cols-5' : 'grid-cols-4'} mb-8`}>
+        <Tabs defaultValue="roles" className="w-full">
+          <TabsList className={`grid w-full ${currentUser.hasAdminRights ? 'grid-cols-6' : 'grid-cols-4'} mb-8`}>
             <TabsTrigger value="members">Участники</TabsTrigger>
             <TabsTrigger value="news">Новости</TabsTrigger>
             <TabsTrigger value="gallery">Галерея</TabsTrigger>
             <TabsTrigger value="rules">Правила</TabsTrigger>
             {currentUser.hasAdminRights && (
-              <TabsTrigger value="roles">Роли</TabsTrigger>
+              <>
+                <TabsTrigger value="roles">Роли</TabsTrigger>
+                <TabsTrigger value="logs">Логи</TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -524,7 +815,7 @@ const Index = () => {
                         <Badge style={{ backgroundColor: member.roleColor }} className="text-white">
                           {member.rank}
                         </Badge>
-                        {editMode.members && currentUser.hasAdminRights && (
+                        {editMode.members && canEdit && (
                           <div className="flex space-x-2">
                             <Select value={member.rank} onValueChange={(value) => {
                               const roleId = roles.find(r => r.name === value)?.id;
@@ -544,10 +835,7 @@ const Index = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setMembers(members.filter(m => m.id !== member.id));
-                                alert('Участник удален');
-                              }}
+                              onClick={() => handleDelete(member.id, 'member', member.name)}
                             >
                               <Icon name="Trash2" className="w-4 h-4" />
                             </Button>
@@ -623,16 +911,22 @@ const Index = () => {
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline">{item.date}</Badge>
                           {editMode.news && canEdit && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setNews(news.filter(n => n.id !== item.id));
-                                alert('Новость удалена');
-                              }}
-                            >
-                              <Icon name="Trash2" className="w-4 h-4" />
-                            </Button>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(item, 'news')}
+                              >
+                                <Icon name="Edit" className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(item.id, 'news', item.title)}
+                              >
+                                <Icon name="Trash2" className="w-4 h-4" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -710,17 +1004,22 @@ const Index = () => {
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
                       {editMode.gallery && canEdit && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => {
-                            setGallery(gallery.filter(g => g.id !== item.id));
-                            alert('Элемент удален из галереи');
-                          }}
-                        >
-                          <Icon name="Trash2" className="w-4 h-4" />
-                        </Button>
+                        <div className="absolute top-2 right-2 space-x-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => openEditDialog(item, 'gallery')}
+                          >
+                            <Icon name="Edit" className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(item.id, 'gallery', item.title)}
+                          >
+                            <Icon name="Trash2" className="w-4 h-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                     <CardContent className="p-4">
@@ -797,16 +1096,22 @@ const Index = () => {
                           <span>{rule.title}</span>
                         </div>
                         {editMode.rules && canEdit && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setRules(rules.filter(r => r.id !== rule.id));
-                              alert('Правило удалено');
-                            }}
-                          >
-                            <Icon name="Trash2" className="w-4 h-4" />
-                          </Button>
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(rule, 'rules')}
+                            >
+                              <Icon name="Edit" className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(rule.id, 'rules', rule.title)}
+                            >
+                              <Icon name="Trash2" className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                       </CardTitle>
                     </CardHeader>
@@ -820,139 +1125,188 @@ const Index = () => {
           </TabsContent>
 
           {currentUser.hasAdminRights && (
-            <TabsContent value="roles" id="roles">
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h3 className="text-3xl font-bold mb-2">Управление ролями</h3>
-                  <p className="text-muted-foreground">Создавайте и управляйте ролями клана 🏮</p>
-                </div>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle>Создать новую роль</CardTitle>
-                    <CardDescription>Добавьте новую роль с уникальным цветом и разрешениями</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCreateRole} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="roleName">Название роли</Label>
-                          <Input
-                            id="roleName"
-                            value={newRole.name}
-                            onChange={(e) => setNewRole({...newRole, name: e.target.value})}
-                            placeholder="Новая роль"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="roleColor">Цвет роли</Label>
-                          <Input
-                            id="roleColor"
-                            type="color"
-                            value={newRole.color}
-                            onChange={(e) => setNewRole({...newRole, color: e.target.value})}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="roleDescription">Описание</Label>
-                        <Textarea
-                          id="roleDescription"
-                          value={newRole.description}
-                          onChange={(e) => setNewRole({...newRole, description: e.target.value})}
-                          placeholder="Описание роли..."
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label>Разрешения</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                          {Object.entries(permissionLabels).map(([key, label]) => (
-                            <div key={key} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={key}
-                                checked={newRole.permissions[key as keyof typeof newRole.permissions]}
-                                onCheckedChange={(checked) =>
-                                  setNewRole({
-                                    ...newRole,
-                                    permissions: {
-                                      ...newRole.permissions,
-                                      [key]: !!checked
-                                    }
-                                  })
-                                }
-                              />
-                              <Label htmlFor={key} className="text-sm">
-                                {label}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <Button type="submit">
-                        <Icon name="Plus" className="w-4 h-4 mr-2" />
-                        Создать роль
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {roles.map((role) => (
-                    <Card key={role.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div 
-                              className="w-4 h-4 rounded-full"
-                              style={{ backgroundColor: role.color }}
+            <>
+              <TabsContent value="roles" id="roles">
+                <div className="space-y-6">
+                  <div className="text-center mb-8">
+                    <h3 className="text-3xl font-bold mb-2">Управление ролями</h3>
+                    <p className="text-muted-foreground">Создавайте и управляйте ролями клана 🏮</p>
+                  </div>
+                  
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle>Создать новую роль</CardTitle>
+                      <CardDescription>Добавьте новую роль с уникальным цветом и разрешениями</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleCreateRole} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="roleName">Название роли</Label>
+                            <Input
+                              id="roleName"
+                              value={newRole.name}
+                              onChange={(e) => setNewRole({...newRole, name: e.target.value})}
+                              placeholder="Новая роль"
+                              required
                             />
-                            <span style={{ color: role.color }}>{role.name}</span>
                           </div>
-                          {role.name !== 'Конфуций' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setRoles(roles.filter(r => r.id !== role.id));
-                                alert('Роль удалена');
-                              }}
-                            >
-                              <Icon name="Trash2" className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </CardTitle>
-                        <CardDescription>{role.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Badge style={{ backgroundColor: role.color }} className="text-white">
-                              {role.color}
-                            </Badge>
-                          </div>
-                          <div className="text-sm">
-                            <p className="font-medium mb-2">Разрешения:</p>
-                            <div className="space-y-1">
-                              {Object.entries(role.permissions).map(([key, value]) => (
-                                <div key={key} className="flex items-center space-x-2">
-                                  <div className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                  <span className={`text-xs ${value ? 'text-green-600' : 'text-gray-500'}`}>
-                                    {permissionLabels[key as keyof typeof permissionLabels]}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                          <div>
+                            <Label htmlFor="roleColor">Цвет роли</Label>
+                            <Input
+                              id="roleColor"
+                              type="color"
+                              value={newRole.color}
+                              onChange={(e) => setNewRole({...newRole, color: e.target.value})}
+                              required
+                            />
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        <div>
+                          <Label htmlFor="roleDescription">Описание</Label>
+                          <Textarea
+                            id="roleDescription"
+                            value={newRole.description}
+                            onChange={(e) => setNewRole({...newRole, description: e.target.value})}
+                            placeholder="Описание роли..."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label>Разрешения</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            {Object.entries(permissionLabels).map(([key, label]) => (
+                              <div key={key} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={key}
+                                  checked={newRole.permissions[key as keyof typeof newRole.permissions]}
+                                  onCheckedChange={(checked) =>
+                                    setNewRole({
+                                      ...newRole,
+                                      permissions: {
+                                        ...newRole.permissions,
+                                        [key]: !!checked
+                                      }
+                                    })
+                                  }
+                                />
+                                <Label htmlFor={key} className="text-sm">
+                                  {label}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Button type="submit">
+                          <Icon name="Plus" className="w-4 h-4 mr-2" />
+                          Создать роль
+                        </Button>
+                      </form>
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {roles.map((role) => (
+                      <Card key={role.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div 
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: role.color }}
+                              />
+                              <span style={{ color: role.color }}>{role.name}</span>
+                            </div>
+                            {role.name !== 'Конфуций' && (
+                              <div className="flex space-x-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openEditDialog(role, 'role')}
+                                >
+                                  <Icon name="Edit" className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDelete(role.id, 'role', role.name)}
+                                >
+                                  <Icon name="Trash2" className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </CardTitle>
+                          <CardDescription>{role.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge style={{ backgroundColor: role.color }} className="text-white">
+                                {role.color}
+                              </Badge>
+                            </div>
+                            <div className="text-sm">
+                              <p className="font-medium mb-2">Разрешения:</p>
+                              <div className="space-y-1">
+                                {Object.entries(role.permissions).map(([key, value]) => (
+                                  <div key={key} className="flex items-center space-x-2">
+                                    <div className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                    <span className={`text-xs ${value ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {permissionLabels[key as keyof typeof permissionLabels]}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+
+              <TabsContent value="logs" id="logs">
+                <div className="space-y-6">
+                  <div className="text-center mb-8">
+                    <h3 className="text-3xl font-bold mb-2">Логи активности</h3>
+                    <p className="text-muted-foreground">История действий администраторов 🏮</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {activityLogs.map((log) => (
+                      <Card key={log.id} className="hover:shadow-lg transition-shadow">
+                        <CardContent className="py-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                                <Icon name="Activity" className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium">
+                                  <span className="text-primary">{log.user}</span> {log.action}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Цель: {log.target}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {log.timestamp.toLocaleDateString('ru-RU')}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {log.timestamp.toLocaleTimeString('ru-RU')}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </>
           )}
         </Tabs>
       </main>
